@@ -51,10 +51,32 @@ if (react && demoHtml && !same(react, demoHtml)) {
   console.log('  FAIL public/demo.html modes differ from React MODES')
 }
 
+// Social-meta parity guard: the React app (index.html) and the vanilla
+// fallback (public/demo.html) must both carry the Open Graph block, so a
+// shared/linked demo page doesn't preview as a bare text line. Assert the
+// tags that gate a rich card: og:title is the anchor; twitter:card must be
+// summary_large_image or the og:image is ignored. (issue: demo.html had no
+// <head> meta block, so it could never show a link-preview image.)
+const ogTags = [
+  'property="og:title"',
+  'property="og:description"',
+  'property="og:image"',
+  'name="twitter:card" content="summary_large_image"',
+]
+console.log('Social-meta parity check')
+for (const file of ['index.html', 'public/demo.html']) {
+  const text = read(file)
+  const missing = ogTags.filter((tag) => !text.includes(tag))
+  const ok = missing.length === 0
+  if (!ok) failed = true
+  console.log(`  ${ok ? 'ok  ' : 'MISS'} ${file}: ${missing.length ? 'missing ' + missing.join(', ') : 'full OG block'}`)
+}
+
 if (failed) {
   console.error(
     '\nDance-mode lists drifted. Update the `MODES` list in src/lib/dance.ts ' +
-      "and the `modes` array in index.html / public/demo.html to match.",
+      "and the `modes` array in index.html / public/demo.html to match.\n" +
+      'or the social-meta block drifted. Update index.html and public/demo.html to both carry the full OG block.',
   )
   process.exit(1)
 }
